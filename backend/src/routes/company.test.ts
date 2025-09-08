@@ -4,6 +4,7 @@ import db from '../db/connection';
 
 describe('/api/company', () => {
   beforeEach(async () => {
+    await db.migrate.latest();
     await db('company_context').truncate();
     await db('team_context').truncate();
     await db('individual_context').truncate();
