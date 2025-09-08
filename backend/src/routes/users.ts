@@ -75,23 +75,19 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-// GET user context
+// GET all user contexts
 router.get('/:userId/context', async (req, res) => {
     const { userId } = req.params;
     try {
-        const userContext = await db('individual_context').where({ user_id: userId }).first();
-        if (userContext) {
-            res.json(userContext);
-        } else {
-            res.status(404).json({ message: 'Individual context not found.' });
-        }
+        const userContexts = await db('individual_context').where({ user_id: userId });
+        res.json(userContexts);
     } catch (error) {
         res.status(500).json({ message: 'Error fetching individual context', error });
     }
 });
 
-// PUT (create or update) user context
-router.put('/:userId/context', async (req, res) => {
+// POST a new user context
+router.post('/:userId/context', async (req, res) => {
     const { userId } = req.params;
     const { context } = req.body;
 
@@ -106,25 +102,57 @@ router.put('/:userId/context', async (req, res) => {
             return res.status(404).json({ message: 'User not found.' });
         }
 
-        const existingContext = await db('individual_context').where({ user_id: userId }).first();
+        const [id] = await db('individual_context').insert({
+            user_id: userId,
+            context: JSON.stringify(context)
+        });
 
-        if (existingContext) {
-            await db('individual_context').where({ user_id: userId }).update({
-                context: JSON.stringify(context),
-                updated_at: new Date()
-            });
-        } else {
-            await db('individual_context').insert({
-                user_id: userId,
-                context: JSON.stringify(context)
-            });
-        }
-
-        const updatedContext = await db('individual_context').where({ user_id: userId }).first();
-        res.status(200).json(updatedContext);
+        const newContext = await db('individual_context').where({ id }).first();
+        res.status(201).json(newContext);
 
     } catch (error) {
+        res.status(500).json({ message: 'Error creating individual context', error });
+    }
+});
+
+// PUT (update) a user context
+router.put('/:userId/context/:contextId', async (req, res) => {
+    const { contextId } = req.params;
+    const { context } = req.body;
+
+    if (!context) {
+        return res.status(400).json({ message: 'Context data is required.' });
+    }
+
+    try {
+        const count = await db('individual_context').where({ id: contextId }).update({
+            context: JSON.stringify(context),
+            updated_at: new Date()
+        });
+
+        if (count > 0) {
+            const updatedContext = await db('individual_context').where({ id: contextId }).first();
+            res.json(updatedContext);
+        } else {
+            res.status(404).json({ message: 'Individual context not found.' });
+        }
+    } catch (error) {
         res.status(500).json({ message: 'Error updating individual context', error });
+    }
+});
+
+// DELETE a user context
+router.delete('/:userId/context/:contextId', async (req, res) => {
+    const { contextId } = req.params;
+    try {
+        const count = await db('individual_context').where({ id: contextId }).del();
+        if (count > 0) {
+            res.status(204).send();
+        } else {
+            res.status(404).json({ message: 'Individual context not found.' });
+        }
+    } catch (error) {
+        res.status(500).json({ message: 'Error deleting individual context', error });
     }
 });
 
