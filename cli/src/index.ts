@@ -1,98 +1,66 @@
 import { Command } from 'commander';
-import axios from 'axios';
+import {
+  getCompanyContext,
+  getTeamContext,
+  getIndividualContext,
+  getUser
+} from './api';
 
 const program = new Command();
 
 program
   .name('ent-context-cli')
-  .description('CLI to manage Enterprise Context')
+  .description('CLI to fetch and prime enterprise context for an LLM')
   .version('1.0.0');
 
-program.command('get-company-context')
-  .description('Fetches the company context')
-  .action(async () => {
-    try {
-      const response = await axios.get('http://localhost:3001/api/company');
-      console.log('Company Context:', response.data);
-    } catch (error: any) {
-      console.error('Error fetching company context:', error.message);
-      if (error.response) {
-        console.error('Status:', error.response.status);
-        console.error('Data:', error.response.data);
-      }
+program.command('prime <userId>')
+  .description('Fetches and combines all context for a given user ID.')
+  .action(async (userIdStr: string) => {
+    const userId = parseInt(userIdStr, 10);
+    if (isNaN(userId)) {
+      console.error('Error: User ID must be a number.');
+      process.exit(1);
     }
-  });
 
-program.command('get-team-context <teamId>')
-  .description('Fetches the context for a specific team')
-  .action(async (teamId: string) => {
+    console.log(`Priming context for User ID: ${userId}...\n`);
+    const combinedContext: any = {};
+
     try {
-      const response = await axios.get(`http://localhost:3001/api/teams/${teamId}/context`);
-      console.log(`Team Context for Team ID ${teamId}:`, response.data);
-    } catch (error: any) {
-      console.error(`Error fetching team context for Team ID ${teamId}:`, error.message);
-      if (error.response) {
-        console.error('Status:', error.response.status);
-        console.error('Data:', error.response.data);
-      }
-    }
-  });
+      // 1. Get company context
+      console.log('Fetching company context...');
+      const companyContext = await getCompanyContext();
+      combinedContext.company = companyContext?.context ? JSON.parse(companyContext.context) : null;
 
-program.command('get-individual-context <userId>')
-  .description('Fetches the context for a specific user')
-  .action(async (userId: string) => {
-    try {
-      const response = await axios.get(`http://localhost:3001/api/users/${userId}/context`);
-      console.log(`Individual Context for User ID ${userId}:`, response.data);
-    } catch (error: any) {
-      console.error(`Error fetching individual context for User ID ${userId}:`, error.message);
-      if (error.response) {
-        console.error('Status:', error.response.status);
-        console.error('Data:', error.response.data);
-      }
-    }
-  });
-
-program.command('get-all-context')
-  .description('Fetches all available context (company, team, individual)')
-  .option('-t, --teamId <teamId>', 'Specify a Team ID to fetch team context')
-  .option('-u, --userId <userId>', 'Specify a User ID to fetch individual context')
-  .action(async (options) => {
-    try {
-      const allContext: any = {};
-
-      // Fetch Company Context
-      try {
-        const companyResponse = await axios.get('http://localhost:3001/api/company');
-        allContext.company = companyResponse.data;
-      } catch (error: any) {
-        console.warn('Warning: Could not fetch company context.', error.message);
+      // 2. Get user and their team ID
+      console.log('Fetching user details...');
+      const user = await getUser(userId);
+      if (!user) {
+        console.error(`Error: User with ID ${userId} not found.`);
+        process.exit(1);
       }
 
-      // Fetch Team Context
-      if (options.teamId) {
-        try {
-          const teamResponse = await axios.get(`http://localhost:3001/api/teams/${options.teamId}/context`);
-          allContext.team = teamResponse.data;
-        } catch (error: any) {
-          console.warn(`Warning: Could not fetch team context for Team ID ${options.teamId}.`, error.message);
-        }
+      // 3. Get team context if user has a team
+      if (user.team_id) {
+        console.log(`Fetching team context for Team ID: ${user.team_id}...\n`);
+        const teamContext = await getTeamContext(user.team_id);
+        combinedContext.team = teamContext.map((tc: any) => tc.context ? JSON.parse(tc.context) : null);
+      } else {
+        console.log('User is not associated with a team.');
       }
 
-      // Fetch Individual Context
-      if (options.userId) {
-        try {
-          const userResponse = await axios.get(`http://localhost:3001/api/users/${options.userId}/context`);
-          allContext.individual = userResponse.data;
-        } catch (error: any) {
-          console.warn(`Warning: Could not fetch individual context for User ID ${options.userId}.`, error.message);
-        }
-      }
+      // 4. Get individual context
+      console.log('Fetching individual context...');
+      const individualContext = await getIndividualContext(userId);
+      combinedContext.individual = individualContext.map((ic: any) => ic.context ? JSON.parse(ic.context) : null);
 
-      console.log('All Context:', JSON.stringify(allContext, null, 2));
+      // 5. Print the final combined context
+      console.log('\n--- Combined Enterprise Context ---');
+      console.log(JSON.stringify(combinedContext, null, 2));
+      console.log('--- End of Context ---\n');
 
     } catch (error: any) {
-      console.error('Error fetching all context:', error.message);
+      console.error('\nAn error occurred during the priming process:', error.message);
+      process.exit(1);
     }
   });
 
