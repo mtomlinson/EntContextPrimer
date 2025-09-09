@@ -5,14 +5,14 @@ const config: { [key: string]: Knex.Config } = {
   development: {
     client: 'sqlite3',
     connection: {
-      filename: path.resolve(process.cwd(), 'backend', 'src', 'db', 'dev.sqlite3')
+      filename: path.resolve(process.cwd(), 'src', 'db', 'dev.sqlite3')
     },
     useNullAsDefault: true,
     migrations: {
-      directory: path.resolve(process.cwd(), 'backend', 'src', 'db', 'migrations')
+      directory: path.resolve(process.cwd(), 'src', 'db', 'migrations')
     },
     seeds: {
-      directory: path.resolve(process.cwd(), 'backend', 'src', 'db', 'seeds')
+      directory: path.resolve(process.cwd(), 'src', 'db', 'seeds')
     }
   },
   // production configuration can be added here later

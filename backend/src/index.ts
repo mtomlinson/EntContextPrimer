@@ -5,7 +5,7 @@ import teamsRouter from './routes/teams';
 import usersRouter from './routes/users';
 
 const app = express();
-const port = process.env.PORT || 3001;
+const port = parseInt(process.env.PORT || '3001', 10);
 
 app.use(cors());
 app.use(express.json());
@@ -19,8 +19,8 @@ app.get('/', (req, res) => {
 });
 
 if (require.main === module) {
-  app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`Server is running on http://0.0.0.0:${port}`);
   });
 }
 

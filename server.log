@@ -1,0 +1,5 @@
+
+> ent-context-primer-backend@1.0.0 start
+> node dist/src/index.js
+
+Server is running on http://0.0.0.0:3001

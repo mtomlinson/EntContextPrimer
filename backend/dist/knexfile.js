@@ -8,14 +8,14 @@ const config = {
     development: {
         client: 'sqlite3',
         connection: {
-            filename: path_1.default.resolve(process.cwd(), 'backend', 'src', 'db', 'dev.sqlite3')
+            filename: path_1.default.resolve(process.cwd(), 'src', 'db', 'dev.sqlite3')
         },
         useNullAsDefault: true,
         migrations: {
-            directory: path_1.default.resolve(process.cwd(), 'backend', 'src', 'db', 'migrations')
+            directory: path_1.default.resolve(process.cwd(), 'src', 'db', 'migrations')
         },
         seeds: {
-            directory: path_1.default.resolve(process.cwd(), 'backend', 'src', 'db', 'seeds')
+            directory: path_1.default.resolve(process.cwd(), 'src', 'db', 'seeds')
         }
     },
     // production configuration can be added here later
