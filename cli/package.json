@@ -1,12 +1,16 @@
 {
   "name": "ent-context-cli",
   "version": "1.0.0",
-  "description": "CLI to manage Enterprise Context",
+  "description": "CLI to fetch and prime enterprise context for an LLM",
   "main": "dist/index.js",
+  "bin": {
+    "entcontextprime": "./dist/index.js"
+  },
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
     "build": "tsc",
+    "postbuild": "sed -i '1i #!/usr/bin/env node' dist/index.js && chmod +x dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
